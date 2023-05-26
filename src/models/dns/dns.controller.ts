@@ -17,12 +17,10 @@ export class DnsController {
     const socketResponse = await new Promise<Buffer>((resolve, reject) => {
       socket.send(query, 0, query.length, 53, '8.8.8.8', (error) => {
         if (error) {
-          console.error('Error sending query:', error)
           reject(error)
         }
 
         socket.on('message', (response) => {
-          console.log('Received response:', response)
           resolve(response)
         })
       })

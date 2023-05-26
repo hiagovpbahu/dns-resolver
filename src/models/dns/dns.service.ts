@@ -10,7 +10,6 @@ export class DnsService {
     const RECURSION_DESIRED = 1 << 8
 
     const name = this.encodeDnsName(domainName)
-    console.log('encoded name', name)
     const id = Math.floor(Math.random() * 65536)
 
     const header: DNSHeader = {
