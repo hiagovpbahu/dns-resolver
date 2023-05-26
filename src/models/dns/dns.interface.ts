@@ -8,7 +8,7 @@ export interface DNSHeader {
 }
 
 export interface DNSQuestion {
-  name: string
+  name: Uint8Array
   type: number
   class: number
 }

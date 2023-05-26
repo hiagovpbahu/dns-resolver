@@ -16,7 +16,7 @@ describe('DnsController', () => {
 
   describe('Resolve DNS', () => {
     it('should return "93.184.216.34"', () => {
-      expect(dnsController.getResolvedDns('example.com')).toBe('93.184.216.34')
+      expect(dnsController.resolveDns('example.com')).toBe('93.184.216.34')
     })
   })
 })
