@@ -94,7 +94,6 @@ export class DnsService {
 
   parseDnsPacket(dnsPacketReader: Readable): DNSPacket {
     const header = this.parseHeader(dnsPacketReader)
-    console.log('header', header)
 
     const questions = Array.from({ length: header.questionsQuantity }, () =>
       this.parseQuestion(dnsPacketReader),
@@ -153,8 +152,6 @@ export class DnsService {
 
     const type = data.readUInt16BE(0)
     const classData = data.readUInt16BE(2)
-
-    console.log('type, classData', type, classData)
 
     return {
       name,
