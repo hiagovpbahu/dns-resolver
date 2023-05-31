@@ -1,6 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common'
 import { DnsService } from './dns.service'
-import { createSocket, RemoteInfo } from 'dgram'
+import { createSocket } from 'dgram'
+import { Readable } from 'stream'
 
 @Controller('dns')
 export class DnsController {
@@ -13,7 +14,6 @@ export class DnsController {
     const query = this.dnsService.buildQuery(url, TYPE_A)
 
     const socket = createSocket('udp4')
-
     const socketResponse = await new Promise<Buffer>((resolve, reject) => {
       socket.send(query, 0, query.length, 53, '8.8.8.8', (error) => {
         if (error) {
@@ -26,6 +26,9 @@ export class DnsController {
       })
     })
 
-    return this.dnsService.parseDnsResponse(socketResponse)
+    const reader = Readable.from(socketResponse)
+    const dnsResponse = this.dnsService.parseDnsPacket(reader)
+
+    return dnsResponse
   }
 }

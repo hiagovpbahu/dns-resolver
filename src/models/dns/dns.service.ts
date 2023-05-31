@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { decode as decodeDNSPacket } from 'dns-packet'
-import { DNSHeader, DNSQuestion } from './dns.interface'
+import { DNSHeader, DNSPacket, DNSQuestion, DNSRecord } from './dns.interface'
 import { concatenateUint8Arrays } from '../../common/helpers/uint8Array.helper'
+import { Readable } from 'stream'
 
 @Injectable()
 export class DnsService {
@@ -92,17 +92,151 @@ export class DnsService {
     return encodedDomainNameWithNullByte
   }
 
-  parseDnsResponse(response: Buffer) {
-    const dnsPacket = decodeDNSPacket(response)
+  parseDnsPacket(dnsPacketReader: Readable): DNSPacket {
+    const header = this.parseHeader(dnsPacketReader)
+    console.log('header', header)
 
-    if (dnsPacket.answers.length <= 0) {
-      return {
-        error: 'No answers found in the DNS response',
-      }
+    const questions = Array.from({ length: header.questionsQuantity }, () =>
+      this.parseQuestion(dnsPacketReader),
+    )
+    const answers = Array.from({ length: header.answersQuantity }, () =>
+      this.parseRecord(dnsPacketReader),
+    )
+    const authorities = Array.from({ length: header.authoritiesQuantity }, () =>
+      this.parseRecord(dnsPacketReader),
+    )
+    const additionals = Array.from(
+      { length: header.additionalRecordsQuantity },
+      () => this.parseRecord(dnsPacketReader),
+    )
+
+    return {
+      header,
+      questions,
+      answers,
+      authorities,
+      additionals,
+    }
+  }
+
+  parseHeader(reader: Readable): DNSHeader {
+    const bufferLength = 12
+    const buffer = reader.read(bufferLength)
+
+    if (buffer === null || buffer.length < bufferLength) {
+      throw new Error('Invalid buffer or insufficient length')
     }
 
-    const answer = dnsPacket.answers[0]
+    const items = Array.from(Array(bufferLength).keys(), (index) =>
+      buffer.readUInt16BE(index * 2),
+    )
 
-    return answer
+    return {
+      id: items[0],
+      flags: items[1],
+      questionsQuantity: items[2],
+      answersQuantity: items[3],
+      authoritiesQuantity: items[4],
+      additionalRecordsQuantity: items[5],
+    }
+  }
+
+  parseQuestion(reader: Readable): DNSQuestion {
+    const name = this.decodeName(reader)
+
+    const questionDataLength = 4
+    const data = reader.read(questionDataLength)
+
+    if (data === null || data.length < questionDataLength) {
+      throw new Error('Invalid data or insufficient length')
+    }
+
+    const type = data.readUInt16BE(0)
+    const classData = data.readUInt16BE(2)
+
+    console.log('type, classData', type, classData)
+
+    return {
+      name,
+      type,
+      class: classData,
+    }
+  }
+
+  parseRecord(reader: Readable): DNSRecord {
+    const name = this.decodeName(reader)
+    const data = reader.read(10)
+
+    if (data === null || data.length < 10) {
+      throw new Error('Invalid data or insufficient length')
+    }
+    const type = data.readUInt16BE(0)
+    const classData = data.readUInt16BE(2)
+    const ttl = data.readUInt32BE(4)
+    const dataLength = data.readUInt16BE(8)
+    const recordData = reader.read(dataLength)
+
+    if (recordData === null) {
+      throw new Error('Insufficient data')
+    }
+
+    return {
+      name,
+      type,
+      class: classData,
+      ttl,
+      data: recordData,
+    }
+  }
+
+  decodeName(reader: Readable): Buffer {
+    const nameParts: Buffer[] = []
+
+    while (true) {
+      const length = reader.read(1)?.[0]
+
+      if (length === undefined || length === 0) {
+        break
+      }
+
+      const isCompressed = length & 0b1100_0000
+
+      if (isCompressed) {
+        nameParts.push(this.decodeCompressedName(length, reader))
+        break
+      }
+
+      const part = reader.read(length)
+
+      if (part === null) {
+        throw new Error('Insufficient data')
+      }
+
+      nameParts.push(part)
+    }
+
+    return Buffer.concat(nameParts)
+  }
+
+  decodeCompressedName(length: number, reader: Readable): Buffer {
+    const pointerBytes = Buffer.from([length & 0b0011_1111])
+    const nextByte = reader.read(1)
+
+    if (nextByte === null) {
+      throw new Error('Insufficient data')
+    }
+
+    pointerBytes[1] = nextByte[0]
+
+    const currentPosition = reader.readableLength
+    reader.push(null)
+    reader.unshift(Buffer.alloc(0))
+    reader.unshift(reader.read(currentPosition))
+    reader.unshift(pointerBytes)
+    const result = this.decodeName(reader)
+    reader.unshift(Buffer.alloc(0))
+    reader.unshift(reader.read(currentPosition))
+
+    return result
   }
 }

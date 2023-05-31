@@ -12,7 +12,8 @@
     "naumovs.color-highlight",
     "TabNine.tabnine-vscode",
     "rodrigovallades.es7-react-js-snippets",
-    "dsznajder.es7-react-js-snippets"
+    "dsznajder.es7-react-js-snippets",
+    "SonarSource.sonarlint-vscode"
   ],
   "unwantedRecommendations": []
 }
