@@ -26,8 +26,7 @@ export class DnsController {
       })
     })
 
-    const reader = Readable.from(socketResponse)
-    const dnsResponse = this.dnsService.parseDnsPacket(reader)
+    const dnsResponse = this.dnsService.parseDnsPacket(socketResponse)
 
     return dnsResponse
   }
