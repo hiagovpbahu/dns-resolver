@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { DNSHeader, DNSPacket, DNSQuestion, DNSRecord } from './dns.interface'
 import { concatenateUint8Arrays } from '../../common/helpers/uint8Array.helper'
-import { Readable } from 'stream'
 
 @Injectable()
 export class DnsService {
