@@ -283,4 +283,33 @@ export class DnsService {
 
     return result.name
   }
+
+  getReadableDNSPacket(dnsPacket: DNSPacket) {
+    return {
+      header: dnsPacket.header,
+      questions: dnsPacket.questions.map(({ name, ...question }) => ({
+        name: name.toString(),
+        ...question,
+      })),
+      answers: dnsPacket.answers.map(({ name, data, ...answer }) => ({
+        name: name.toString(),
+        data: data.join('.'),
+        ...answer,
+      })),
+      authorities: dnsPacket.authorities.map(
+        ({ name, data, ...authority }) => ({
+          name: name.toString(),
+          data: data.toString(),
+          ...authority,
+        }),
+      ),
+      additionals: dnsPacket.additionals.map(
+        ({ name, data, ...additional }) => ({
+          name: name.toString(),
+          data: data.toString(),
+          ...additional,
+        }),
+      ),
+    }
+  }
 }

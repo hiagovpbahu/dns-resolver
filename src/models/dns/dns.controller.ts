@@ -1,7 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common'
 import { DnsService } from './dns.service'
 import { createSocket } from 'dgram'
-import { Readable } from 'stream'
 
 @Controller('dns')
 export class DnsController {
@@ -27,7 +26,9 @@ export class DnsController {
     })
 
     const dnsResponse = this.dnsService.parseDnsPacket(socketResponse)
+    const readableDnsResponse =
+      this.dnsService.getReadableDNSPacket(dnsResponse)
 
-    return dnsResponse
+    return readableDnsResponse
   }
 }

@@ -28,3 +28,20 @@ export interface DNSRecord {
   ttl: number
   data: Uint8Array
 }
+
+export interface ReadableDNSPacket {
+  header: DNSHeader
+  questions: ReadableDNSQuestion[]
+  answers: ReadableDNSRecord[]
+  authorities: ReadableDNSRecord[]
+  additionals: ReadableDNSRecord[]
+}
+
+export interface ReadableDNSQuestion extends Omit<DNSQuestion, 'name'> {
+  name: string
+}
+
+export interface ReadableDNSRecord extends Omit<DNSRecord, 'name' | 'data'> {
+  name: string
+  data: string
+}
