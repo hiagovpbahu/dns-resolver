@@ -26,15 +26,6 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
-## Test
+## Using the Service
 
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
+Call https://yourhostname.com/dns/:domain to get DNS information about the route.
